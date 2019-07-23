@@ -288,9 +288,9 @@ class MsgPack {
 		return $decoded;
 	}
 
-	public static function extension($ext) {
+	public static function extend($ext) {
 		$type = $ext['type'];
-		$typeof = $ext['varType'];
+		$typeof = isset($ext['varType']) ? $ext['varType'] : 'object';
 		$encode = $ext['encode'];
 		$decode = $ext['decode'];
 
@@ -313,13 +313,5 @@ class MsgPack {
 	}
 }
 endif;
-
-function msgpack_pack($obj,$strAsBufs=TRUE) {
-	return MsgPack::encode($obj,$strAsBufs);
-}
-
-function msgpack_unpack($str,$assocArrays=FALSE) {
-	return MsgPack::decode($str,$assocArrays);
-}
 
 ?>
