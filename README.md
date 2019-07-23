@@ -26,14 +26,22 @@ var_dump($decoded);
 ```
 // Encode data in the msgpack format
 // $object: The object to encode
-// $stringsAsBins: If strings should be encoded in the msgpack binary type
-MsgPack::encode(any $object, boolean $stringsAsBins = FALSE) -> string
+// $settings = array(
+//   'stringbuffers' => boolean,     If strings should be encoded in the msgpack binary type
+// )
+// If $settings is TRUE, 'stringbuffers' is set to TRUE,
+// and all other settings are set to default
+MsgPack::encode(any $object, array $settings = array()) -> string
 
 // Decode data from the msgpack format
 // $data: The msgpack string data
-// $associativeArrays: If objects should be decoded as associative arrays;
-//   otherwise they are decoded as instances of stdClass
-MsgPack::decode(string $data, boolean $associativeArrays = FALSE) -> any;
+// $settings = array(
+//   'associative' => boolean    If objects should be decoded as associative arrays;
+//                               otherwise they are decoded as instances of stdClass
+// )
+// If $settings is TRUE, 'associative' is set to TRUE,
+// and all other settings are set to default
+MsgPack::decode(string $data, array $settings = array()) -> any;
 
 // Add an extension
 // $extensionArray: An associative array mapping the following properties:

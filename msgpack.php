@@ -272,16 +272,22 @@ class MsgPack {
 		throw new Error("MsgPack Error: Somehow encountered unknown byte code: "+b);
 	}
 
-	public static function encode($obj,$strsAsBufs=FALSE) {
-		self::$strsAsBufs = $strsAsBufs;
+	public static function encode($obj,$settings=array()) {
+		self::$strsAsBufs = isset($settings['stringbuffers']) ? $settings['stringbuffers'] : FALSE;
+
+		if($settings === TRUE) self::$strsAsBufs = TRUE;
+		
 		$encoded = self::enc($obj);
 
 		return $encoded;
 	}
 
-	public static function decode($str,$assocArrays=FALSE) {
+	public static function decode($str,$settings=array()) {
+		self::$assocArrays = isset($settings['associative']) ? $settings['associative'] : FALSE;
+
+		if($settings === TRUE) self::$assocArrays = TRUE;
+
 		self::$buffer = $str;
-		self::$assocArrays = $assocArrays;
 		$decoded = self::dec();
 		self::$buffer = NULL;
 
