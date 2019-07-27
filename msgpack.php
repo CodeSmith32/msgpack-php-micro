@@ -9,7 +9,9 @@ class MsgPack {
 	private static $extensionCodes = array();
 
 	private static $strsAsBufs = NULL;
+
 	private static $assocArrays = NULL;
+
 	private static $buffer = NULL;
 	private static $pos = 0;
 
@@ -288,6 +290,7 @@ class MsgPack {
 		if($settings === TRUE) self::$assocArrays = TRUE;
 
 		self::$buffer = $str;
+		self::$pos = 0;
 		$decoded = self::dec();
 		self::$buffer = NULL;
 
