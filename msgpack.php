@@ -37,6 +37,15 @@ class MsgPack {
 		return TRUE;
 	}
 
+	private static function detectRecursion(&$arr) {
+		// based on https://stackoverflow.com/questions/9042142/detecting-infinite-array-recursion-in-php#9042169
+		$printed_count = preg_match_all('%\\*RECURSION\\*%',print_r($arr,TRUE));
+		if($printed_count === 0) return FALSE;
+
+		$serial_count = preg_match_all('%\\*RECURSION\\*%',serialize($arr));
+		return $printed_count > $serial_count;
+	}
+
 	private static function read($l) {
 		if(self::$pos + $l > strlen(self::$buffer))
 			throw new Exception('MsgPack Error: Unexpected end of data');
@@ -276,9 +285,14 @@ class MsgPack {
 
 	public static function encode($obj,$settings=array()) {
 		self::$strsAsBufs = isset($settings['stringbuffers']) ? $settings['stringbuffers'] : FALSE;
+		$testRecursion = isset($settings['testrecursion']) ? $settings['testrecursion'] : FALSE;
 
 		if($settings === TRUE) self::$strsAsBufs = TRUE;
 		
+		if($testRecursion) {
+			if(self::detectRecursion($obj))
+				throw new Exception('MsgPack Error: Recursive structure detected');
+		}
 		$encoded = self::enc($obj);
 
 		return $encoded;
@@ -301,12 +315,14 @@ class MsgPack {
 		return $decoded;
 	}
 
-	public static function extend($ext) {
+	public static function extend($ext,$core=FALSE) {
 		$type = $ext['type'];
 		$typeof = isset($ext['varType']) ? $ext['varType'] : 'object';
 		$encode = $ext['encode'];
 		$decode = $ext['decode'];
 
+		if(!$core && $type < 0)
+			throw new Exception("MsgPack Error: Non-core extension cannot have negative type $type");
 		if(!is_callable($encode))
 			throw new Exception("MsgPack Error: Extension for code $type must have callable 'encode'");
 		if(!is_callable($decode))
