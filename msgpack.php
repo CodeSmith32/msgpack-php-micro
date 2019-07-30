@@ -230,7 +230,7 @@ class MsgPack {
 					$buf .= self::enc($k) . self::enc($v);
 				return $buf;
 		}
-		throw new Exception('MsgPack Error: Could not encode value of type '.$ty);
+		throw new Exception("MsgPack Error: Could not encode value of type $ty");
 	}
 
 	private static function dec() {
@@ -271,7 +271,7 @@ class MsgPack {
 			case 0xde: return self::dec_obj(self::ui16()); // map 16
 			case 0xdf: return self::dec_obj(self::ui32()); // map 32
 		}
-		throw new Error("MsgPack Error: Somehow encountered unknown byte code: "+b);
+		throw new Exception("MsgPack Error: Somehow encountered unknown byte code: $b");
 	}
 
 	public static function encode($obj,$settings=array()) {
@@ -292,6 +292,10 @@ class MsgPack {
 		self::$buffer = $str;
 		self::$pos = 0;
 		$decoded = self::dec();
+		
+		if(self::$pos < strlen(self::$buffer))
+			throw new Exception("MsgPack Error: Trying to decode more data than expected");
+
 		self::$buffer = NULL;
 
 		return $decoded;
