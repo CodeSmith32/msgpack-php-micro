@@ -118,5 +118,5 @@ This function doesn't return anything.
 ----------------------------------------------------------------
 
 ## TODO:
-- The Timestamp extension type.
+- The Timestamp extension type
 - Thoroughly test

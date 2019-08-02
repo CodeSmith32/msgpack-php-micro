@@ -17,7 +17,6 @@ class MsgPack {
 
 	private static $i16 = 'n';
 	private static $i32 = 'N';
-	private static $i64 = 'J';
 	private static $f32 = 'G';
 	private static $f64 = 'E';
 
@@ -60,11 +59,10 @@ class MsgPack {
 	}
 	private static function ui32() {
 		$d = unpack(self::$i32.'n',self::read(4));
-		return $d['n'];
+		return $d['n'] < 0 ? $d['n'] + 0x100000000 : $d['n'];
 	}
 	private static function ui64() {
-		$d = unpack(self::$i64.'n',self::read(8));
-		return $d['n'];
+		return self::ui32() * 0x100000000 + self::ui32();
 	}
 	private static function i8() {
 		$v = ord(self::read(1));
@@ -77,18 +75,10 @@ class MsgPack {
 		return $v;
 	}
 	private static function i32() {
-		$v = self::ui32();
-		return $v >> 0;
+		return self::ui32() >> 0;
 	}
 	private static function i64() {
-		$hi = self::ui32();
-		$lo = self::ui32();
-		$v = $hi * 0x100000000;
-		if($hi&0x800000000)
-			$v -= $lo;
-		else
-			$v += $lo;
-		return $v;
+		return self::i32() * 0x100000000 + self::ui32();
 	}
 	private static function f32() {
 		$d = unpack(self::$f32.'n',self::read(4));
@@ -120,6 +110,7 @@ class MsgPack {
 		return $o;
 	}
 	private static function dec_ext($ty,$buf) {
+		if($ty & 0x80) $ty |= (-1^255);
 		if(!isset(self::$extensionCodes[$ty]))
 			return NULL;
 		return call_user_func(self::$extensionCodes[$ty]['dec'],$buf);
@@ -162,6 +153,13 @@ class MsgPack {
 				return "\xc0";
 			case 'boolean':
 				return $obj ? "\xc2" : "\xc3";
+			case 'double':
+				if(floor($obj) !== $obj) {
+					if(self::needsF64($obj))
+						return "\xcb" . pack(self::$f64, $obj);
+					return "\xca" . pack(self::$f32, $obj);
+				}
+				// fallthrough for fractionless doubles
 			case 'integer':
 				// signed
 				if($obj < 0) {
@@ -173,7 +171,7 @@ class MsgPack {
 						return "\xd1" . pack(self::$i16, $obj);
 					if($obj >= -0x100000000)
 						return "\xd2" . pack(self::$i32, $obj);
-					return "\xd3" . pack(self::$i64, $obj);
+					return "\xd3" . pack(self::$i32, floor($obj/0x100000000)) . pack(self::$i32, $obj >> 0);
 				}
 
 				// unsigned
@@ -185,11 +183,7 @@ class MsgPack {
 					return "\xcd" . pack(self::$i16, $obj);
 				if($obj < 0x100000000)
 					return "\xce" . pack(self::$i32, $obj);
-				return "\xcf" . pack(self::$i64, $obj);
-			case 'double':
-				if(self::needsF64($obj))
-					return "\xcb" . pack(self::$f64, $obj);
-				return "\xca" . pack(self::$f32, $obj);
+				return "\xcf" . pack(self::$i32, $obj / 0x100000000) . pack(self::$i32, $obj >> 0);
 			case 'string': // treat as buffers
 				if(self::$strsAsBufs) {
 					$l = strlen($obj);
@@ -316,13 +310,15 @@ class MsgPack {
 	}
 
 	public static function extend($ext,$core=FALSE) {
-		$type = $ext['type'];
+		$type = intval($ext['type']);
 		$typeof = isset($ext['varType']) ? $ext['varType'] : 'object';
 		$encode = $ext['encode'];
 		$decode = $ext['decode'];
 
 		if(!$core && $type < 0)
 			throw new Exception("MsgPack Error: Non-core extension cannot have negative type $type");
+		if($type < -128 || $type > 127)
+			throw new Exception("MsgPack Error: Type code for extension is out of range: $type");
 		if(!is_callable($encode))
 			throw new Exception("MsgPack Error: Extension for code $type must have callable 'encode'");
 		if(!is_callable($decode))
