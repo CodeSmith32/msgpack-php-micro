@@ -335,8 +335,58 @@ class MsgPack {
 		if(!isset(self::$extensions[$typeof]))
 			self::$extensions[$typeof] = array();
 		self::$extensions[$typeof] []= $ext;
+		self::$extensionCodes[$type] = $ext;
 	}
 }
+MsgPack::extend(array(
+	'type' => -1,
+	'encode' => function($obj) {
+		if(!($obj instanceof DateTime)) return FALSE;
+		
+		$secs = floatval($obj->format('U'));
+		$nano = floatval($obj->format('u'))*1000;
+		if($secs < 0 || $secs > 0x3ffffffff)
+			return pack('NNN', $nano, floor($secs/0x100000000), $secs >> 0);
+		if($nano || $secs > 0xffffffff)
+			return pack('NN', $nano*4 + ($secs/0x100000000 & 3), $secs >> 0);
+		return pack('N', $secs >> 0);
+	},
+	'decode' => function($data) {
+		$secs = 0;
+		$nano = 0;
+
+		switch(strlen($data)) {
+			case 4:
+				$time = unpack('Ns', $data);
+				$secs = $time['s'];
+				if($secs < 0) $secs += 0x100000000;
+				break;
+			case 8:
+				$time = unpack('Nn/Ns', $data);
+				$nano = $time['n'];
+				$secs = $time['s'];
+				if($secs < 0) $secs += 0x100000000;
+				if($nano < 0) $nano += 0x100000000;
+				$secs += ($nano & 3) * 0x100000000;
+				$nano = floor($nano / 4);
+				break;
+			case 12:
+				$time = unpack('Nn/Na/Nb', $data);
+				$nano = $time['n'];
+				$a = $time['a'];
+				$b = $time['b'];
+				if($nano < 0) $nano += 0x100000000;
+				if($b < 0) $b += 0x100000000; // a is signed
+				$secs = $a * 0x100000000 + $b;
+				var_dump($secs);
+				break;
+			default:
+				throw new Exception("MsgPack Error: Failed to decode Timestamp: Unknown timestamp encoding version with length ".strlen($data));
+		}
+		var_dump(sprintf('%0.0f %06d UTC',$secs,$nano/1000));
+		return DateTime::createFromFormat('U u T',sprintf('%0.0f %06d UTC',$secs,$nano/1000));
+	},
+),TRUE);
 endif;
 
 ?>

@@ -1,7 +1,9 @@
 # msgpack-php-micro
 msgpack - A super-lightweight PHP implementation of the [msgpack](http://msgpack.org/) data encoding format.
 
-This is an extremely small PHP implementation of msgpack, for ease of embedding.
+This is a very simple, small PHP implementation of msgpack, for ease of embedding.
+
+Notice: This implementation is still fairly new, and may have bugs. If you find any bugs, please report them immediately, and I will try to get them fixed as soon as possible.
 
 **Usage:**
 
@@ -12,6 +14,7 @@ $data = array(
   'hello' => 'world',
   'array' => array(1, 2, 3, 4),
   5 => 78.662,
+  'dt' => new DateTime(), // DateTime encoded in Timestamp extension format
 );
 
 $encoded = MsgPack::encode($data);
@@ -118,5 +121,4 @@ This function doesn't return anything.
 ----------------------------------------------------------------
 
 ## TODO:
-- The Timestamp extension type
 - Thoroughly test
