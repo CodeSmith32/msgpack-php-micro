@@ -152,7 +152,7 @@ class MsgPack {
 			case 'NULL':
 				return "\xc0";
 			case 'boolean':
-				return $obj ? "\xc2" : "\xc3";
+				return $obj ? "\xc3" : "\xc2";
 			case 'double':
 				if(floor($obj) !== $obj) {
 					if(self::needsF64($obj))
