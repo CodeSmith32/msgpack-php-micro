@@ -244,7 +244,7 @@ class MsgPack {
 		if(($b&0xf0) === 0x90) return self::dec_arr($b&15); // fixarray
 		if(($b&0xe0) === 0xa0) return self::read($b&31); // fixstr
 		switch($b) {
-			case 0xc1: // ehh.. just map it to nil
+			case 0xc1: throw new Exception("MsgPack Error: Encountered reserved type 0xc1");
 			case 0xc0: return NULL; // nil
 			case 0xc2: return FALSE; // false
 			case 0xc3: return TRUE; // true
