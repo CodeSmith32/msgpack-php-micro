@@ -1,6 +1,13 @@
 <?php
 
+/// Micro MsgPack Library
+/// Version:  1.0.2
+/// Author:   Codesmith32
+/// License:  MIT / https://mit-license.org
+/// URL:      https://github.com/CodeSmith32/msgpack-php-micro
+
 if(!class_exists('MsgPack')):
+
 class MsgPack {
 	// static-only class
 	private function __construct() {}
@@ -338,6 +345,7 @@ class MsgPack {
 		self::$extensionCodes[$type] = $ext;
 	}
 }
+
 MsgPack::extend(array(
 	'type' => -1,
 	'encode' => function($obj) {
@@ -387,6 +395,7 @@ MsgPack::extend(array(
 		return DateTime::createFromFormat('U u T',sprintf('%0.0f %06d UTC',$secs,$nano/1000));
 	},
 ),TRUE);
+
 endif;
 
 ?>
